@@ -95,7 +95,7 @@ def call_underfit_choice_theano(M, Obs, num_M, num_Obs, K, num_alpha, agression_
     agression_choices, _ = theano.scan(fn = underfit_choice, outputs_info = None, sequences = Agression_profiles , non_sequences = [nAlpha, M, Obs, K, nM, nO, pvalues, alpha, Preds])
 
     # returns a list of  lists of model choices per observation for each agression function
-    f = theano.function([Agression_profiles, nAlpha, nM, nO], agression_choices)
+    f = theano.function([Agression_profiles, nAlpha, nM, nO], agression_choices, allow_input_downcast = True)
     
     return f(agression_profiles, num_alpha, num_M, num_Obs)
 

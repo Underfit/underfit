@@ -13,9 +13,9 @@ import time
 import cPickle as pickle
 
     
-INFERENCE = 'underfit'
-#INFERENCE = 'bayes'
-BATCH_SIZE = 100
+#INFERENCE = 'underfit'
+INFERENCE = 'bayes'
+BATCH_SIZE = 1000
 
 
 if INFERENCE == 'underfit':

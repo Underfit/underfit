@@ -68,7 +68,7 @@ def call_bayesian_choice_theano(M, Obs, num_M, num_Obs, K, priors_profiles, loss
     # scan over priors 
     choices_profile, _ = theano.scan(scan_over_loss_functions,  outputs_info = None, sequences = Priors_profiles, non_sequences =[M, Obs, nM, nO, K, Loss_funcs])
     
-    f = theano.function([Priors_profiles, nM, nO], choices_profile)
+    f = theano.function([Priors_profiles, nM, nO], choices_profile, allow_input_downcast=True)
     
     return f(priors_profiles, num_M, num_Obs)
    

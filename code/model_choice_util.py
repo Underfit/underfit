@@ -14,7 +14,7 @@ def load_models(filename = 'models.pkl'):
 
     return models
 
-def load_obs(filename = 'obs10000.pkl'):
+def load_obs(filename = 'obs.pkl'):
     t0 = time.time()
     f = open(filename, 'rb')
     obs = pickle.load(f)

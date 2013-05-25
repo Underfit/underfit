@@ -4,7 +4,11 @@ from theano import tensor as T
 try:
     from theano.sandbox.linalg.kron import kron
 except:
-    from theano.toolbox import kron
+    try:
+        from theano.toolbox import kron
+    except: 
+        kron = theano.numpy.kron
+    
 from theano.ifelse import ifelse    
 
 from multinomial_probabilities import multinomial_probabilities
@@ -53,11 +57,44 @@ def bayesian_choice(Choice_type, Priors, Models, Obs, K, num_M, num_Obs):
 
     return Choice
 
-def call_bayesian_choice_theano(M, Obs, num_M, num_Obs, K, priors_profiles, loss_function = 1):
+#def call_bayesian_choice_theano(M, Obs, num_M, num_Obs, K, priors_profiles, loss_function = 1):
+class Bayesian_Choice():
+    # big_obs is the big set of shared data.  Obs is a symbolic tensor representing this batch
+    def __init__(self, M, Obs, nM, nO, K, Priors_profiles, Loss_funcs):
+        
+        def scan_over_loss_functions(priors, M, Obs, nM, nO, K, Loss_funcs):
+            # scan over loss functions
+            choices_for_loss , _ = theano.scan(bayesian_choice, outputs_info = None,  sequences = Loss_funcs, non_sequences=[priors, M, Obs, K, nM, nO])
+
+            return choices_for_loss 
+        
+        # scan over priors 
+        choices_profile, _ = theano.scan(scan_over_loss_functions,  outputs_info = None, sequences = Priors_profiles, non_sequences =[M, Obs, nM, nO, K, Loss_funcs])
+        
+        self.Choice_Profile_F = theano.function([Priors_profiles, nM, nO, Obs], choices_profile, allow_input_downcast=True) #, givens = {Obs: big_obs[i][j]})
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+def call_bayesian_choice_theano(M, Obs, nM, nO, K, Priors_profiles, Loss_funcs):
+
+    
     
     Priors_profiles = T.matrix('Priors')
     Loss_funcs = T.arange(1,5)
     nM, nO = T.iscalars('','')
+    
     
     def scan_over_loss_functions(priors, M, Obs, nM, nO, K, Loss_funcs):
         # scan over loss functions
@@ -68,10 +105,11 @@ def call_bayesian_choice_theano(M, Obs, num_M, num_Obs, K, priors_profiles, loss
     # scan over priors 
     choices_profile, _ = theano.scan(scan_over_loss_functions,  outputs_info = None, sequences = Priors_profiles, non_sequences =[M, Obs, nM, nO, K, Loss_funcs])
     
-    f = theano.function([Priors_profiles, nM, nO], choices_profile, allow_input_downcast=True)
+    #f = theano.function([Priors_profiles, nM, nO], choices_profile, allow_input_downcast=True)
     
-    return f(priors_profiles, num_M, num_Obs)
-   
+    return choices_profile
+    #f(priors_profiles, num_M, num_Obs)
+'''
      
 '''
 Demonstrating functionality:

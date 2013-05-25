@@ -15,7 +15,7 @@ import cPickle as pickle
     
 #INFERENCE = 'underfit'
 INFERENCE = 'bayes'
-BATCH_SIZE = 10000
+BATCH_SIZE = 10
 
 
 if INFERENCE == 'underfit':
@@ -32,7 +32,7 @@ elif INFERENCE == 'bayes':
 
 
 def model_choice(models, obs):	
-    k = [i for i in xrange(2, 9)]
+    k = [i for i in xrange(5, 9)]
     
     Statistics = []
     
@@ -40,7 +40,7 @@ def model_choice(models, obs):
         print 'K = ', ki
                 
         num_M = models[ki-2].shape[0]
-        
+        print num_M
         numNbins = len(obs[ki-2])
         numHbins = len(obs[ki-2][0])
                 
@@ -102,23 +102,25 @@ def model_choice(models, obs):
                 k_pred = kPred(num_obs, num_profiles)
 
                 num_batches = int(np.ceil(num_obs/np.float(BATCH_SIZE)))
+                print num_obs, num_batches, BATCH_SIZE
+
 
                 for batch_index in xrange(num_batches):
                     top = BATCH_SIZE*(batch_index+1) if batch_index < (num_batches-1) else num_obs
-                    
-                    print 'batch index ', batch_index, '\t num obs: ', num_obs
+                    n_obs = top - BATCH_SIZE*(batch_index)
+                    print 'batch index ', batch_index, '\t num obs: ', top - BATCH_SIZE*batch_index
                     
                     if INFERENCE == 'underfit':                        
                         for prof in xrange(num_profiles):
                             k_pred[prof][BATCH_SIZE*(batch_index):top] = get_predictiveness_array(batch_choice[prof],  obs[ki-2][i][j][1], Pred, n_obs)
 
                     elif INFERENCE == 'bayes':   
-                        batch_choice = Choice_Maker.Choice_Profile_F(profiles, num_M, num_obs, obs[ki-2][i][j][0])
+                        batch_choice = Choice_Maker.Choice_Profile_F(profiles, num_M, n_obs, obs[ki-2][i][j][0][BATCH_SIZE*batch_index:top])
                         print batch_choice
                      
                         for pr in xrange(num_priors):
                             for lf in xrange(num_loss_funcs):
-                                k_pred[pr*num_loss_funcs + lf][BATCH_SIZE*(batch_index):top] = get_predictiveness_array(batch_choice[pr][lf],  obs[ki-2][i][j][1], Pred, num_obs)
+                                k_pred[pr*num_loss_funcs + lf][BATCH_SIZE*(batch_index):top] = get_predictiveness_array(batch_choice[pr][lf],  obs[ki-2][i][j][1], Pred, n_obs)
                         
                 for prof in xrange(num_profiles):
                     pred_moments = get_moments(k_pred[prof], num_obs)

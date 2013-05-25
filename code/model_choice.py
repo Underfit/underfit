@@ -3,8 +3,8 @@ import cPickle as pickle
 import theano
 import theano.tensor as T
 
-#from underfit_choice import *
-from bayesian_choice import *
+from underfit_choice import Underfit_Choice
+from bayesian_choice import Bayesian_Choice
 from predictiveness import *
 from get_moments import get_predictiveness_array, get_moments
 from model_choice_util import load_models, load_obs, make_agression_profiles, make_priors_profiles, kData, kPred
@@ -13,13 +13,13 @@ import time
 import cPickle as pickle
 
     
-#INFERENCE = 'underfit'
-INFERENCE = 'bayes'
+INFERENCE = 'underfit'
+#INFERENCE = 'bayes'
 BATCH_SIZE = 10
 
 
 if INFERENCE == 'underfit':
-    pValue_alg = 1
+    pValue_alg = 0
     num_alpha = 10
     num_profiles = 3 # profiles = agression functions 
     name = 'underfit_nA%d_pv%d'%(num_alpha, pValue_alg)
@@ -32,7 +32,7 @@ elif INFERENCE == 'bayes':
 
 
 def model_choice(models, obs):	
-    k = [i for i in xrange(5, 9)]
+    k = [i for i in xrange(2, 9)]
     
     Statistics = []
     
@@ -49,18 +49,21 @@ def model_choice(models, obs):
         ObSym = T.matrix() # Symbolic tensor for observation batches - indexed elements of Obs shared variable are passed through this
 
         Pred = theano.function([], predictiveness_profiles(M, ki, len(models[ki-2])))() # This should be dealt with better too...
+        Pred_n = Pred
 
+        Pred = theano.shared(np.asarray(Pred, dtype = theano.config.floatX))
+        
+        
         # setup inference schemas and theano symbolic tensors
         if INFERENCE == 'underfit':
             profiles = make_agression_profiles(num_profiles, num_alpha)
             
-            alpha = theano.shared(np.asmatrix(np.linspace(0.0,1.0, num = num_alpha, endpoint = False), dtype=theano.config.floatX))
+            #alpha = theano.shared(np.asmatrix(np.linspace(0.0,1.0, num = num_alpha, endpoint = False), dtype=theano.config.floatX))
+            Alpha = T.arange(0., 1.0, 1./num_alpha)
             Agression_profiles = T.matrix('Agr')
             nAlpha, nM, nO = T.iscalars('','','')
 
-            Choice_Profile = call_underfit_choice_theano(M, Obs, num_M, n_obs, ki, num_alpha, profiles, Pred) # this may never work for the direct pvalues
-            #makeChoice = thean.function ...
-            
+            Choice_Maker = Underfit_Choice(M, ObSym, nM, nO, ki, nAlpha, Alpha, Agression_profiles, Pred, pValue_alg) #only works for 0...
             
         elif INFERENCE == 'bayes':
             profiles = make_priors_profiles(num_priors, num_M)
@@ -111,8 +114,10 @@ def model_choice(models, obs):
                     print 'batch index ', batch_index, '\t num obs: ', top - BATCH_SIZE*batch_index
                     
                     if INFERENCE == 'underfit':                        
+                        batch_choice = Choice_Maker.Choice_Profile_F(profiles, num_alpha, num_M, n_obs, obs[ki-2][i][j][0][BATCH_SIZE*batch_index:top])
+                        print batch_choice
                         for prof in xrange(num_profiles):
-                            k_pred[prof][BATCH_SIZE*(batch_index):top] = get_predictiveness_array(batch_choice[prof],  obs[ki-2][i][j][1], Pred, n_obs)
+                            k_pred[prof][BATCH_SIZE*(batch_index):top] = get_predictiveness_array(batch_choice[prof],  obs[ki-2][i][j][1], Pred_n, n_obs)
 
                     elif INFERENCE == 'bayes':   
                         batch_choice = Choice_Maker.Choice_Profile_F(profiles, num_M, n_obs, obs[ki-2][i][j][0][BATCH_SIZE*batch_index:top])
@@ -120,7 +125,7 @@ def model_choice(models, obs):
                      
                         for pr in xrange(num_priors):
                             for lf in xrange(num_loss_funcs):
-                                k_pred[pr*num_loss_funcs + lf][BATCH_SIZE*(batch_index):top] = get_predictiveness_array(batch_choice[pr][lf],  obs[ki-2][i][j][1], Pred, n_obs)
+                                k_pred[pr*num_loss_funcs + lf][BATCH_SIZE*(batch_index):top] = get_predictiveness_array(batch_choice[pr][lf],  obs[ki-2][i][j][1], Pred_n, n_obs)
                         
                 for prof in xrange(num_profiles):
                     pred_moments = get_moments(k_pred[prof], num_obs)

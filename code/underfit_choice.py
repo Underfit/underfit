@@ -44,10 +44,9 @@ def underfit_choice(Agression, num_alpha, Models, Obs, K, num_M, num_Obs, pvalue
     
     Preds = kron(T.ones((1,num_alpha*num_Obs)),Preds)
     pvalues = kron(pvalues,T.ones((1,num_M)))
-    pvalues = kron(T.ones((1,num_alpha)),pvalues)
-    alpha = kron(alpha,T.ones((num_M,num_M*num_Obs)))
-    
-    
+    pvalues = kron(T.ones((1,num_alpha)),pvalues)    
+    alpha = kron(T.reshape(alpha, (1, num_alpha)),T.ones((num_M,num_M*num_Obs)))
+
     # This "knocks out" rejected universes from predictiveness profiles
     Scores = Preds + INF*(pvalues < alpha) 
     # The worst case predictiveness for each alpha is found
@@ -77,28 +76,18 @@ def get_pvalues(M, Obs, K, num_M, num_Obs, pValue_alg = 0):
     
     return pvalues    
 
-def call_underfit_choice_theano(M, Obs, num_M, num_Obs, K, num_alpha, agression_profiles = None, Preds = None, pValue_alg = 0):
-    #theano.config.compute_test_value = 'warn'
-    
-    if agression_profiles == None:
-        agression_profiles = np.ones((num_alpha, 1)/num_alpha, dtype = theano.config.floatX)
-    
-    pvalues = get_pvalues(M, Obs, K, num_M, num_Obs, pValue_alg = pValue_alg)
-    
-    #Alpha = T.matrix # 1 x num_alpha
-    
-    alpha = theano.shared(np.asmatrix(np.linspace(0.0,1.0, num = num_alpha, endpoint = False), dtype=theano.config.floatX))
-    Agression_profiles = T.matrix('Agr')
-    nAlpha, nM, nO = T.iscalars('','','')
-    
-    # scan over the agression profiles
-    agression_choices, _ = theano.scan(fn = underfit_choice, outputs_info = None, sequences = Agression_profiles , non_sequences = [nAlpha, M, Obs, K, nM, nO, pvalues, alpha, Preds])
+class Underfit_Choice():
 
-    # returns a list of  lists of model choices per observation for each agression function
-    f = theano.function([Agression_profiles, nAlpha, nM, nO], agression_choices, allow_input_downcast = True)
-    
-    return f(agression_profiles, num_alpha, num_M, num_Obs)
+    def __init__(self, M, Obs, nM, nO, K, nAlpha, alpha, agression_profiles, Preds, pValue_alg):
+        
+        pvalues = get_pvalues(M, Obs, K, nM, nO, pValue_alg = pValue_alg)
+        
+        # scan over the agression profiles
+        agression_choices, _ = theano.scan(fn = underfit_choice, outputs_info = None, sequences = agression_profiles , non_sequences = [nAlpha, M, Obs, K, nM, nO, pvalues, alpha, Preds])
 
+        # returns a list of  lists of model choices per observation for each agression function
+        self.Choice_Profile_F = theano.function([agression_profiles, nAlpha, nM, nO, Obs], agression_choices, allow_input_downcast = True)
+        
 
 '''
 Demonstrating functionality:

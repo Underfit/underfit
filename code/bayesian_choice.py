@@ -57,7 +57,6 @@ def bayesian_choice(Choice_type, Priors, Models, Obs, K, num_M, num_Obs):
 
     return Choice
 
-#def call_bayesian_choice_theano(M, Obs, num_M, num_Obs, K, priors_profiles, loss_function = 1):
 class Bayesian_Choice():
     # big_obs is the big set of shared data.  Obs is a symbolic tensor representing this batch
     def __init__(self, M, Obs, nM, nO, K, Priors_profiles, Loss_funcs):
@@ -71,7 +70,7 @@ class Bayesian_Choice():
         # scan over priors 
         choices_profile, _ = theano.scan(scan_over_loss_functions,  outputs_info = None, sequences = Priors_profiles, non_sequences =[M, Obs, nM, nO, K, Loss_funcs])
         
-        self.Choice_Profile_F = theano.function([Priors_profiles, nM, nO, Obs], choices_profile, allow_input_downcast=True) #, givens = {Obs: big_obs[i][j]})
+        self.Choice_Profile_F = theano.function([Priors_profiles, nM, nO, Obs], choices_profile, allow_input_downcast=True)
         
 
 

@@ -15,7 +15,7 @@ import cPickle as pickle
     
 INFERENCE = 'underfit'
 #INFERENCE = 'bayes'
-BATCH_SIZE = 10
+BATCH_SIZE = 1000
 
 
 if INFERENCE == 'underfit':
@@ -40,7 +40,7 @@ def model_choice(models, obs):
         print 'K = ', ki
                 
         num_M = models[ki-2].shape[0]
-        print num_M
+        print 'Num Models: ', num_M
         numNbins = len(obs[ki-2])
         numHbins = len(obs[ki-2][0])
                 
@@ -78,17 +78,11 @@ def model_choice(models, obs):
             print 'unknown inference algorithm...'
             quit()
         
-        
-        
-        
-                    
 
-        
         # all data for this K
         k_Data = kData(numNbins, numHbins, num_profiles)
         
-        
-        
+
         for i in xrange(numNbins):
             for j in xrange(numHbins):
                 print 'bin ', i, j
@@ -105,7 +99,6 @@ def model_choice(models, obs):
                 k_pred = kPred(num_obs, num_profiles)
 
                 num_batches = int(np.ceil(num_obs/np.float(BATCH_SIZE)))
-                print num_obs, num_batches, BATCH_SIZE
 
 
                 for batch_index in xrange(num_batches):

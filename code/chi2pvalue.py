@@ -13,7 +13,7 @@ from scipy import stats
 
 INF = 10000
 
-from theanoChi2pv import Chi2PV, Elemwise
+from theanoChi2pv_proper import chi2pv
 
 #This function returns a num_M by num_Obs matrix of chi^2 test statistics 
 #M is num_M by K
@@ -61,7 +61,7 @@ def chi2_pvalues(M, Obs, K, num_M, num_Obs):
     
     X = chi2_test_statistic(M, Obs, K, num_M, num_Obs)
 
-    Pvs = Elemwise(Chi2PV())(X, K-1)
+    Pvs = chi2pv(X, K-1) #Elemwise(Chi2PV())(X, K-1)
 
     return Pvs
     

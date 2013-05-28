@@ -30,6 +30,7 @@ class Chi2PV(theano.scalar.ScalarOp):
 
     def impl(self, x, k):
         r"""Just compute the numerical result here."""
+        
         return stats.chi2.sf(x, k)
     
     '''
@@ -53,4 +54,5 @@ class Elemwise(theano.tensor.Elemwise):
             return self.scalar_op.impl(*v, **kw)
 
 
-
+scalar_chi2pv = Chi2PV()
+chi2pv = Elemwise(scalar_chi2pv)
